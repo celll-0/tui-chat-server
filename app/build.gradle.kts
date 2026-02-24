@@ -19,7 +19,12 @@ repositories {
 dependencies {
     // This dependency is used by the application.
     implementation(libs.guava)
-}
+
+    implementation("org.jline:jline:3.30.6")
+
+    implementation("org.jline:jline-terminal-jansi:3.30.6")
+
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.21.1")}
 
 testing {
     suites {
