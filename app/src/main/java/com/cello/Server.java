@@ -12,6 +12,8 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import static com.cello.CLILoggingRoutines.configureLogging;
+
 public class Server {
     private static final int PORT = 8000; // Port number for the server
     private static final Map<String, Socket> clients = new HashMap<String, Socket>();
@@ -22,7 +24,7 @@ public class Server {
             System.out.println("Server is listening on port " + PORT);
 
             // create a chat manager to manage and broadcast messages to client threads
-
+            // configureLogging();
             try {
                 while (true) {
                     Socket connetion = serverSocket.accept();
@@ -60,9 +62,17 @@ public class Server {
         public void run() {
             try {
                 System.out.println("(" + clientId + ") connected");
-                try (Terminal terminal = TerminalBuilder.builder().system(true).build()) {
-                    InputStream in = connection.getInputStream();
-                    OutputStream out = connection.getOutputStream();
+
+                InputStream in = connection.getInputStream();
+                OutputStream out = connection.getOutputStream();
+                TerminalBuilder configuredTerminal = TerminalBuilder.builder()
+                        .system(true)
+                        .dumb(false)
+                        .ffm(false)
+                        .jna(false)
+                        .jansi(true);
+
+                try (Terminal terminal = configuredTerminal.build()) {
                     Thread receiving = new Thread(new InputStreamHandler(in, terminal, outMessageQueue, clientId));
                     Thread sending = new Thread(new OutputStreamHandler(out, outMessageQueue, clientId));
 
@@ -72,10 +82,13 @@ public class Server {
 //                    Keep the threads alive
                     sending.join();
                     receiving.join();
+                } catch(IllegalStateException e){
+                    System.out.println("Failed to build interactive terminal! " + e.getMessage());
+                    throw new IllegalStateException(e);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-            } catch (Exception e) {
+            }  catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
                 try {

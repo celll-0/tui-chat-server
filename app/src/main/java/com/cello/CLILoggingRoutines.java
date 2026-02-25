@@ -5,9 +5,9 @@ import org.jline.reader.LineReaderBuilder;
 import org.jline.terminal.Terminal;
 
 import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.util.concurrent.BlockingQueue;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class CLILoggingRoutines {
     private static final String UI_SEPARATOR = "\n============================================\n\n";
@@ -75,4 +75,12 @@ public class CLILoggingRoutines {
         }
     }
 
+    public static void configureLogging() {
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setLevel(Level.ALL);
+
+        Logger logger = Logger.getLogger("org.jline");
+        logger.setLevel(Level.ALL);
+        logger.addHandler(handler);
+    }
 }

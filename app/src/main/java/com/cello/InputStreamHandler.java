@@ -35,8 +35,6 @@ public class InputStreamHandler implements Runnable {
     public void run() {
         try (in){
             for(String inpJson; (inpJson = in.readLine()) != null;) {
-                terminalWriter.println("INCOMING JSON: " + inpJson);
-                terminalWriter.println("\n==========================\n");
                 Message msg = json.readValue(inpJson, Message.class);
                 if(msg.type == Message.MessageType.CHAT) {
                     String msgText = msg.getData();

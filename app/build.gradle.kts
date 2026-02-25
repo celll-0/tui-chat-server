@@ -16,15 +16,25 @@ repositories {
     mavenCentral()
 }
 
+
 dependencies {
     // This dependency is used by the application.
     implementation(libs.guava)
 
     implementation("org.jline:jline:3.30.6")
 
-    implementation("org.jline:jline-terminal-jansi:3.30.6")
+    implementation("org.fusesource.jansi:jansi:2.4.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.21.1")
+}
 
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.21.1")}
+
+// Apply a specific Java toolchain to ease working on different environments.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 
 testing {
     suites {
@@ -36,14 +46,15 @@ testing {
     }
 }
 
-// Apply a specific Java toolchain to ease working on different environments.
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
 
 application {
     // Define the main class for the application.
     mainClass = "com.cello.Server"
+}
+
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "com.cello.Server"
+    }
 }
