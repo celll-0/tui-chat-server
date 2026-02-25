@@ -15,11 +15,14 @@ import java.util.concurrent.BlockingQueue;
 public class Server {
     private static final int PORT = 8000; // Port number for the server
     private static final Map<String, Socket> clients = new HashMap<String, Socket>();
-    private static volatile BlockingQueue<String> outgoingMessageQueue = new ArrayBlockingQueue<String>(100);
+    private static volatile BlockingQueue<Message> outgoingMessageQueue = new ArrayBlockingQueue<Message>(100);
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server is listening on port " + PORT);
+
+            // create a chat manager to manage and broadcast messages to client threads
+
             try {
                 while (true) {
                     Socket connetion = serverSocket.accept();
@@ -43,9 +46,9 @@ public class Server {
         private final String clientId;
         private final String clientHost;
         private final int clientPort;
-        private volatile BlockingQueue<String> outMessageQueue;
+        private volatile BlockingQueue<Message> outMessageQueue;
 
-        public AcceptClientThread(Socket connection, BlockingQueue<String> outgoingMessageQueue) {
+        public AcceptClientThread(Socket connection, BlockingQueue<Message> outgoingMessageQueue) {
             this.connection = connection;
             this.clientHost = connection.getInetAddress().getHostAddress();
             this.clientPort = connection.getPort();

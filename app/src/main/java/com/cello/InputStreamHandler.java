@@ -19,10 +19,10 @@ public class InputStreamHandler implements Runnable {
     public final String clientId;
     private final PrintWriter terminalWriter;
     private final LineReader terminalReader;
-    private volatile BlockingQueue<String> outMessageQueue;
+    private volatile BlockingQueue<Message> outMessageQueue;
     private ObjectMapper json;
 
-    public InputStreamHandler(InputStream in, Terminal terminal, BlockingQueue<String> outMessageQueue, String clientId) {
+    public InputStreamHandler(InputStream in, Terminal terminal, BlockingQueue<Message> outMessageQueue, String clientId) {
         this.clientId = clientId;
         this.outMessageQueue = outMessageQueue;
         this.terminalWriter = terminal.writer();
@@ -35,19 +35,21 @@ public class InputStreamHandler implements Runnable {
     public void run() {
         try (in){
             for(String inpJson; (inpJson = in.readLine()) != null;) {
-                Message inp = json.readValue(inpJson, Message.class);
-                String msg = inp.getData();
+                terminalWriter.println("INCOMING JSON: " + inpJson);
+                terminalWriter.println("\n==========================\n");
+                Message msg = json.readValue(inpJson, Message.class);
+                if(msg.type == Message.MessageType.CHAT) {
+                    String msgText = msg.getData();
 
-                if (msg.equals("/end")) break;
-//                TODO move timestamp func into message. generate stamp on creation
-//                TODO Add ".formattedChat" for messages of type `CHAT`
+                    if (msgText.equals("/end")) break;
+                    // TODO Add ".formattedChat" for messages of type `CHAT`
 
-                String timestamp = new SimpleDateFormat("MM-dd-yyyy|HH:mm:ss").format(new Date());
-                String stampedMsg = "[" + timestamp + "] " + clientId + ": " + msg;
+                    String stampedMsg = "[" + msg.getTimestamp() + "] " + clientId + ": " + msgText;
 
-                outMessageQueue.add(stampedMsg);
-                terminalWriter.println(stampedMsg);
-                terminalWriter.flush();
+                    outMessageQueue.add(msg);
+                    terminalWriter.println(stampedMsg);
+                    terminalWriter.flush();
+                }
             }
             terminalWriter.println("\n[" + clientId + "] Connection closed\n");
         } catch (SocketException | NullPointerException | EndOfFileException e) {
