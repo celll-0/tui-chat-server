@@ -17,18 +17,24 @@ import static com.cello.CLILoggingRoutines.configureLogging;
 public class Server {
     private static final int PORT = 8000; // Port number for the server
     private static final Map<String, Socket> clients = new HashMap<String, Socket>();
-    private static volatile BlockingQueue<Message> outgoingMessageQueue = new ArrayBlockingQueue<Message>(100);
+    private static final BlockingQueue<Message> outgoingMessageQueue = new ArrayBlockingQueue<Message>(100);
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server is listening on port " + PORT);
 
-            // create a chat manager to manage and broadcast messages to client threads
-            // configureLogging();
-            try {
+            TerminalBuilder configuredTerminal = TerminalBuilder.builder()
+                    .system(true)
+                    .dumb(false)
+                    .ffm(false)
+                    .jna(false)
+                    .jansi(true);
+
+            try (Terminal terminal = configuredTerminal.build()){
                 while (true) {
                     Socket connetion = serverSocket.accept();
-                    AcceptClientThread acceptClient = new AcceptClientThread(connetion, outgoingMessageQueue);
+
+                    AcceptClientThread acceptClient = new AcceptClientThread(connetion, terminal, outgoingMessageQueue);
                     clients.put(acceptClient.getClientId(), connetion);
                     acceptClient.start();
                 }
@@ -48,13 +54,15 @@ public class Server {
         private final String clientId;
         private final String clientHost;
         private final int clientPort;
+        private final Terminal terminal;
         private volatile BlockingQueue<Message> outMessageQueue;
 
-        public AcceptClientThread(Socket connection, BlockingQueue<Message> outgoingMessageQueue) {
+        public AcceptClientThread(Socket connection, Terminal terminal, BlockingQueue<Message> outgoingMessageQueue) {
             this.connection = connection;
             this.clientHost = connection.getInetAddress().getHostAddress();
             this.clientPort = connection.getPort();
-            this.clientId = clientHost + "/" + clientPort;
+            this.clientId = clientHost + ":" + clientPort;
+            this.terminal = terminal;
             this.outMessageQueue = outgoingMessageQueue;
         }
 
@@ -63,16 +71,9 @@ public class Server {
             try {
                 System.out.println("(" + clientId + ") connected");
 
-                InputStream in = connection.getInputStream();
-                OutputStream out = connection.getOutputStream();
-                TerminalBuilder configuredTerminal = TerminalBuilder.builder()
-                        .system(true)
-                        .dumb(false)
-                        .ffm(false)
-                        .jna(false)
-                        .jansi(true);
-
-                try (Terminal terminal = configuredTerminal.build()) {
+                try (InputStream in = connection.getInputStream();
+                     OutputStream out = connection.getOutputStream()
+                ){
                     Thread receiving = new Thread(new InputStreamHandler(in, terminal, outMessageQueue, clientId));
                     Thread sending = new Thread(new OutputStreamHandler(out, outMessageQueue, clientId));
 
@@ -85,8 +86,6 @@ public class Server {
                 } catch(IllegalStateException e){
                     System.out.println("Failed to build interactive terminal! " + e.getMessage());
                     throw new IllegalStateException(e);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
                 }
             }  catch (Exception e) {
                 throw new RuntimeException(e);

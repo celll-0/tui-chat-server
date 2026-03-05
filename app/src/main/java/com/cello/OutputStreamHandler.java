@@ -29,8 +29,14 @@ public  class OutputStreamHandler implements Runnable {
     public void run() {
         try (out){
             while(true) {
-                Message msg = outMessageQueue.take();   // blocks until an item is available
+                System.out.print("\n--- polling for messages to broadcast");
+
+                Message msg = outMessageQueue.take();// blocks until an item is available
                 if(msg.type == Message.MessageType.CHAT && !msg.getClientId().equals(clientId)){
+                    System.out.print("\n--- sending message");
+                    System.out.print("\n--- msg client: " + msg.getClientId());
+                    System.out.print("\n--- onboard client: " + clientId);
+
                     String jsonInp = json.writeValueAsString(msg);
                     out.write(jsonInp);
                     out.newLine();
