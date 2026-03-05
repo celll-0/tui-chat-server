@@ -71,9 +71,9 @@ public class Server {
             try {
                 System.out.println("(" + clientId + ") connected");
 
-                try (InputStream in = connection.getInputStream();
-                     OutputStream out = connection.getOutputStream()
-                ){
+                InputStream in = connection.getInputStream();
+                OutputStream out = connection.getOutputStream();
+                try {
                     Thread receiving = new Thread(new InputStreamHandler(in, terminal, outMessageQueue, clientId));
                     Thread sending = new Thread(new OutputStreamHandler(out, outMessageQueue, clientId));
 
